@@ -17,7 +17,7 @@ export interface CreatePromptData {
 
 // Ensure setting the base URL appropriately for the backend setup
 const api = axios.create({
-  baseURL: 'http://localhost:3000/prompts',
+  baseURL: 'http://localhost:3001/prompts',
   headers: {
     'Content-Type': 'application/json',
   },
