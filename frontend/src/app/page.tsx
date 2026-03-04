@@ -5,14 +5,42 @@ import {
   Flex, 
   Heading, 
   Text, 
-  IconButton, 
   Container,
   VStack,
   useColorModeValue,
   Divider,
+  SimpleGrid,
+  Button,
+  useDisclosure,
+  Spinner,
+  Center
 } from '@chakra-ui/react';
+import { PromptCard } from '@/components/PromptCard';
+import { CreatePromptModal } from '@/components/CreatePromptModal';
+import { Prompt, promptApi } from '@/services/api';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const loadPrompts = async () => {
+    setIsLoading(true);
+    try {
+      const data = await promptApi.fetchPrompts();
+      setPrompts(data);
+    } catch (error) {
+      console.error('Failed to load prompts', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPrompts();
+  }, []);
+
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const headerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -51,6 +79,9 @@ export default function Home() {
                 Prompt Vault
               </Heading>
             </Flex>
+            <Button colorScheme="purple" size="sm" onClick={onOpen}>
+              + New Prompt
+            </Button>
           </Flex>
         </Container>
       </Box>
@@ -64,20 +95,45 @@ export default function Home() {
           </Box>
           <Divider borderColor={borderColor} />
 
-          {/* Placeholder for future Prompt List & Create Form */}
-          <Box 
-            p={10} 
-            borderWidth="1px" 
-            borderColor={borderColor} 
-            borderRadius="xl"
-            borderStyle="dashed"
-            bg={useColorModeValue('white', 'gray.800')}
-            textAlign="center"
-          >
-            <Text color="gray.500">Your prompts will appear here.</Text>
-          </Box>
+          {isLoading ? (
+            <Center py={20}>
+              <Spinner size="xl" color="purple.500" thickness="4px" />
+            </Center>
+          ) : prompts.length === 0 ? (
+            <Box 
+              p={10} 
+              borderWidth="1px" 
+              borderColor={borderColor} 
+              borderRadius="xl"
+              borderStyle="dashed"
+              bg={useColorModeValue('white', 'gray.800')}
+              textAlign="center"
+            >
+              <Text color="gray.500" mb={4}>No prompts found. Your vault is empty!</Text>
+              <Button colorScheme="blue" onClick={onOpen}>Create your first prompt</Button>
+            </Box>
+          ) : (
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+              {prompts.map((prompt) => (
+                <PromptCard 
+                  key={prompt.id} 
+                  prompt={prompt} 
+                  onDeleteSuccess={loadPrompts} 
+                />
+              ))}
+            </SimpleGrid>
+          )}
+
         </VStack>
       </Container>
+      
+      {/* Create Modal */}
+      <CreatePromptModal 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        onSuccess={loadPrompts} 
+      />
     </Box>
   );
 }
+
